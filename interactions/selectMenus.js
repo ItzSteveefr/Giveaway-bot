@@ -87,7 +87,7 @@ async function handleTypeSelect(interaction) {
   }
 }
 
-/* ── Mutual Modal (Step 2A) ───────────────────────────────── */
+/* ── Mutual Modal (Step 2A) — NO duration ─────────────────── */
 
 function showMutualModal(interaction) {
   const modal = new ModalBuilder()
@@ -129,37 +129,12 @@ function showMutualModal(interaction) {
     .setPlaceholder('e.g. 1720000000')
     .setRequired(true);
 
-  /* Note: Discord modals only support max 5 TextInputs, so we include days here */
-  /* We need 6 fields but Discord limits modals to 5 action rows */
-  /* We'll combine ping and days into a single row instruction */
-
-  /* Actually, Discord modals support up to 5 text inputs (one per action row). */
-  /* We have 6 fields: Prize, Winners, ServerLink, Ping, PostTimestamp, Days */
-  /* We need to combine two fields. Let's put PostAt and Days on one field */
-  /* OR we can ask for days separately. Let's keep 5 and combine PostAt+Days into one field. */
-  /* Better approach: Use the 5th row for "Post Timestamp (Unix) | Duration (Days)" */
-
-  /* Actually the PRD lists 6 fields in the modal. Discord allows max 5 action rows. */
-  /* Resolution: Combine Post Timestamp and Duration into the 5th field, separated by | */
-  /* OR use a follow-up. Let's use 5 fields and make the last one "Duration (Days)" */
-  /* and handle the timestamp in a combined field. */
-
-  /* The cleanest approach: Use 5 fields. Combine timestamp and days into one input: */
-  /* "Post Timestamp | Duration" e.g. "1720000000 | 7" */
-
-  const postAndDays = new TextInputBuilder()
-    .setCustomId('postAndDays')
-    .setLabel('Post Timestamp (Unix) | Duration (Days)')
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder('e.g. 1720000000 | 7')
-    .setRequired(true);
-
   modal.addComponents(
     new ActionRowBuilder().addComponents(prize),
     new ActionRowBuilder().addComponents(winners),
     new ActionRowBuilder().addComponents(serverLink),
     new ActionRowBuilder().addComponents(ping),
-    new ActionRowBuilder().addComponents(postAndDays)
+    new ActionRowBuilder().addComponents(postTimestamp)
   );
 
   return interaction.showModal(modal);
@@ -556,7 +531,7 @@ async function saveGiveawayFromSession(interaction, session) {
       ping: session.ping || null,
       postAt: session.postAt,
       endAt: session.endAt || null,
-      channelId: session.channelId,
+      channelId: session.channelId || null,
       categoryId: session.categoryId || null,
       customChannelName: session.customChannelName || null,
       requirementText: session.requirementText || null,
@@ -567,11 +542,15 @@ async function saveGiveawayFromSession(interaction, session) {
 
     /* Resolve channel name for the success embed */
     let channelName = 'unknown';
-    try {
-      const ch = await interaction.client.channels.fetch(session.channelId);
-      channelName = ch?.name || 'unknown';
-    } catch {
-      channelName = session.customChannelName || 'unknown';
+    if (session.channelId) {
+      try {
+        const ch = await interaction.client.channels.fetch(session.channelId);
+        channelName = ch?.name || 'unknown';
+      } catch {
+        channelName = session.customChannelName || 'unknown';
+      }
+    } else if (session.customChannelName) {
+      channelName = `${session.customChannelName} (created at post time)`;
     }
 
     /* Build and send the success embed */

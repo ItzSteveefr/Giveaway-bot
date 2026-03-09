@@ -88,4 +88,12 @@ module.exports = {
 
   /** The emoji users react with to enter a giveaway */
   REACTION_EMOJI: '🎉',
+
+  /* ── Reaction Entry / Leave DMs ─────────────────────────── */
+
+  /** DM sent when a user reacts to enter a giveaway. Placeholders: {Username}, {messageLink} */
+  ENTRY_DM: '{Username}, you have entered the giveaway in {messageLink} 🎉',
+
+  /** DM sent when a user removes their reaction. Placeholders: {Username}, {messageLink} */
+  LEAVE_DM: '{Username}, you have left the giveaway in {messageLink} 🎉',
 };

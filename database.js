@@ -1,4 +1,4 @@
-﻿/**
+/**
  * database.js
  * -----------
  * SQLite database connection, table initialization, and all query functions.
@@ -382,6 +382,19 @@ function getGiveawaysDueToEnd(now) {
   );
 }
 
+/**
+ * Get an active giveaway by its Discord message ID.
+ * Used for reaction-based entry/leave DMs.
+ * @param {string} messageId
+ * @returns {object|undefined}
+ */
+function getGiveawayByMessageId(messageId) {
+  return queryOne(
+    "SELECT * FROM giveaways WHERE messageId = ? AND status = 'active'",
+    [messageId]
+  );
+}
+
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
  *  GIVEAWAY ENTRIES QUERIES
  * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
@@ -500,6 +513,7 @@ module.exports = {
   /* Giveaways */
   getGiveaway,
   getGiveawayByGuild,
+  getGiveawayByMessageId,
   createGiveaway,
   updateGiveaway,
   listGiveaways,

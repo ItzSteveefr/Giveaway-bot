@@ -1,15 +1,20 @@
 /**
  * giveaway/poster.js
  * ------------------
- * Posts a giveaway embed to the correct channel. For Mutual giveaways,
- * posts the outside message first. For Mutual/Sponsorship, posts the
- * server link OUTSIDE the embed as a separate message. Adds a 🎉
- * reaction to the embed message so users can click to enter.
+ * Posts a giveaway embed to the correct channel.
+ *
+ * DEFERRED CHANNEL CREATION: If the giveaway has a customChannelName
+ * and categoryId but no channelId, the channel is created at post time.
+ *
+ * For Mutual giveaways, posts the outside message first.
+ * For Mutual/Sponsorship, posts the server link OUTSIDE the embed.
+ * Adds a 🎉 reaction to the embed message so users can click to enter.
  */
 
 const db = require('../database');
 const defaults = require('../config/defaults');
 const { buildActiveGiveawayEmbed } = require('../utils/embeds');
+const { createChannel } = require('../utils/channelCreator');
 
 /**
  * Post a giveaway embed to Discord and update the database.
@@ -20,6 +25,18 @@ const { buildActiveGiveawayEmbed } = require('../utils/embeds');
  */
 async function postGiveaway(giveaway, client) {
   try {
+    /* ── Deferred custom channel creation ─────────────────── */
+    if (!giveaway.channelId && giveaway.categoryId && giveaway.customChannelName) {
+      const guild = await client.guilds.fetch(giveaway.guildId);
+      const channel = await createChannel(guild, giveaway.categoryId, giveaway.customChannelName);
+
+      /* Update the giveaway record with the new channel ID */
+      giveaway.channelId = channel.id;
+      db.updateGiveaway(giveaway.id, { channelId: channel.id });
+
+      console.log(`[Poster] Created deferred channel "${channel.name}" (${channel.id}) for giveaway ${giveaway.id}`);
+    }
+
     /* Resolve the target channel */
     const channel = await client.channels.fetch(giveaway.channelId);
     if (!channel) {

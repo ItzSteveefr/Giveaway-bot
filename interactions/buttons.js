@@ -2,10 +2,17 @@
  * interactions/buttons.js
  * -----------------------
  * Handles all ButtonInteraction events, routed by customId.
- * Currently handles pagination for the /gw list command.
- * Additional button interactions can be added here as needed.
+ * Includes the "Set Duration" button for the two-modal giveaway flow
+ * and pagination for the /gw list command.
  */
 
+const {
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
+} = require('discord.js');
+const sessions = require('./_sessions');
 const { buildErrorEmbed } = require('../utils/embeds');
 
 /**
@@ -14,6 +21,11 @@ const { buildErrorEmbed } = require('../utils/embeds');
  */
 async function handleButton(interaction) {
   const { customId } = interaction;
+
+  /* ── Duration Button (opens 2nd modal) ──────────────────── */
+  if (customId === 'gw_duration_btn') {
+    return handleDurationButton(interaction);
+  }
 
   /* ── List Pagination ────────────────────────────────────── */
   if (customId.startsWith('gw_list_')) {
@@ -25,14 +37,39 @@ async function handleButton(interaction) {
 }
 
 /**
+ * Handle the "Set Duration" button click — opens the duration modal.
+ */
+async function handleDurationButton(interaction) {
+  const sessionKey = `${interaction.user.id}_${interaction.guildId}`;
+  const session = sessions.get(sessionKey);
+
+  if (!session || !session.type) {
+    return interaction.reply({
+      embeds: [buildErrorEmbed('Session expired. Please run `/gw schedule` again.')],
+      ephemeral: true,
+    });
+  }
+
+  const modal = new ModalBuilder()
+    .setCustomId('gw_modal_duration')
+    .setTitle('⏱️ Set Giveaway Duration');
+
+  const duration = new TextInputBuilder()
+    .setCustomId('duration')
+    .setLabel('Duration')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('e.g. 30m, 2d, 1w, 3600s, 12h')
+    .setRequired(true);
+
+  modal.addComponents(new ActionRowBuilder().addComponents(duration));
+
+  return interaction.showModal(modal);
+}
+
+/**
  * Handle pagination buttons for /gw list.
- * Custom IDs follow the pattern: gw_list_prev_{page} or gw_list_next_{page}
  */
 async function handleListPagination(interaction) {
-  /* Pagination is handled directly in the list embed builder */
-  /* This is a placeholder for future pagination logic if the list */
-  /* grows beyond a single embed. Currently the list shows all */
-  /* queued/active and last 10 ended in a single embed. */
   return interaction.reply({
     embeds: [buildErrorEmbed('Pagination is not yet needed for this list size.')],
     ephemeral: true,

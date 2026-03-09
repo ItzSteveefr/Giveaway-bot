@@ -103,12 +103,64 @@ const { handleButton } = require('./interactions/buttons');
     }
   });
 
-  /* ── 5. Bot Ready Event ─────────────────────────────────── */
+  /* ── 5. Reaction Add / Remove DMs ───────────────────────── */
+  
+  const defaults = require('./config/defaults');
+
+  client.on(Events.MessageReactionAdd, async (reaction, user) => {
+    if (user.bot) return;
+    if (reaction.partial) await reaction.fetch();
+    if (reaction.message.partial) await reaction.message.fetch();
+
+    if (reaction.emoji.name !== defaults.REACTION_EMOJI) return;
+
+    /* Check if this is an active giveaway message */
+    const giveaway = db.getGiveawayByMessageId(reaction.message.id);
+    if (!giveaway) return;
+
+    /* DM the user that they entered */
+    try {
+      const messageLink = `https://discord.com/channels/${reaction.message.guildId}/${reaction.message.channelId}/${reaction.message.id}`;
+      const dmMsg = defaults.ENTRY_DM
+        .replace('{Username}', `<@${user.id}>`)
+        .replace('{messageLink}', messageLink);
+      
+      await user.send(dmMsg);
+    } catch (err) {
+      console.warn(`[Reaction] Could not send entry DM to ${user.id}`);
+    }
+  });
+
+  client.on(Events.MessageReactionRemove, async (reaction, user) => {
+    if (user.bot) return;
+    if (reaction.partial) await reaction.fetch();
+    if (reaction.message.partial) await reaction.message.fetch();
+
+    if (reaction.emoji.name !== defaults.REACTION_EMOJI) return;
+
+    /* Check if this is an active giveaway message */
+    const giveaway = db.getGiveawayByMessageId(reaction.message.id);
+    if (!giveaway) return;
+
+    /* DM the user that they left */
+    try {
+      const messageLink = `https://discord.com/channels/${reaction.message.guildId}/${reaction.message.channelId}/${reaction.message.id}`;
+      const dmMsg = defaults.LEAVE_DM
+        .replace('{Username}', `<@${user.id}>`)
+        .replace('{messageLink}', messageLink);
+      
+      await user.send(dmMsg);
+    } catch (err) {
+      console.warn(`[Reaction] Could not send leave DM to ${user.id}`);
+    }
+  });
+
+  /* ── 6. Bot Ready Event ─────────────────────────────────── */
   client.once(Events.ClientReady, (readyClient) => {
     console.log(`[Bot] Ready! Logged in as ${readyClient.user.tag}`);
     console.log(`[Bot] Serving ${readyClient.guilds.cache.size} guild(s).`);
 
-    /* ── 6. Start the scheduler ─────────────────────────────── */
+    /* ── 7. Start the scheduler ─────────────────────────────── */
     startScheduler(client);
   });
 
