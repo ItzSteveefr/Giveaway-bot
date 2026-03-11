@@ -119,7 +119,7 @@ function showMutualModal(interaction) {
     .setCustomId('ping')
     .setLabel('Ping')
     .setStyle(TextInputStyle.Short)
-    .setPlaceholder('@everyone / @here / none')
+    .setPlaceholder('@everyone / @here / none / Role ID')
     .setRequired(true);
 
   const postTimestamp = new TextInputBuilder()
@@ -172,7 +172,7 @@ function showSponsorshipModal(interaction) {
     .setCustomId('ping')
     .setLabel('Ping')
     .setStyle(TextInputStyle.Short)
-    .setPlaceholder('@everyone / @here / none')
+    .setPlaceholder('@everyone / @here / none / Role ID')
     .setRequired(true);
 
   const postTimestamp = new TextInputBuilder()
@@ -232,7 +232,7 @@ function showEventModal(interaction) {
     .setCustomId('ping')
     .setLabel('Ping')
     .setStyle(TextInputStyle.Short)
-    .setPlaceholder('@everyone / @here / none')
+    .setPlaceholder('@everyone / @here / none / Role ID')
     .setRequired(true);
 
   modal.addComponents(

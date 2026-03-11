@@ -59,6 +59,41 @@ function parseDuration(str) {
 }
 
 /* ══════════════════════════════════════════════════════════
+ *  PING NORMALIZATION UTILITY
+ * ══════════════════════════════════════════════════════════ */
+
+/**
+ * Normalize a ping value from the modal input.
+ * Accepts: @everyone, @here, none, or a numeric role ID (Discord snowflake).
+ * If a numeric role ID is provided, converts it to the mention format <@&ID>.
+ *
+ * @param {string} raw — Raw ping input from the modal
+ * @returns {string} Normalized ping string
+ */
+function normalizePing(raw) {
+  const trimmed = raw.trim();
+  const lower = trimmed.toLowerCase();
+
+  /* Pass through standard values */
+  if (lower === 'none' || lower === '@everyone' || lower === '@here') {
+    return trimmed;
+  }
+
+  /* If it's already a role mention like <@&123456789>, pass through */
+  if (/^<@&\d+>$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  /* If it's a pure numeric snowflake (17-20 digits), convert to role mention */
+  if (/^\d{17,20}$/.test(trimmed)) {
+    return `<@&${trimmed}>`;
+  }
+
+  /* Anything else — pass through as-is */
+  return trimmed;
+}
+
+/* ══════════════════════════════════════════════════════════
  *  MODAL ROUTER
  * ══════════════════════════════════════════════════════════ */
 
@@ -189,6 +224,10 @@ async function handleMutualModal(interaction) {
     endAt: null,
     channelId: guildConfig.mutualChannelId,
   });
+
+  /* Normalize ping — convert role IDs to mention format */
+  session.ping = normalizePing(session.ping);
+
   sessions.set(sessionKey, session);
 
   /* Show the duration button → opens 2nd modal */
@@ -246,6 +285,10 @@ async function handleSponsorshipModal(interaction) {
     postAt,
     endAt: null,
   });
+
+  /* Normalize ping — convert role IDs to mention format */
+  session.ping = normalizePing(session.ping);
+
   sessions.set(sessionKey, session);
 
   /* Show the duration button → opens 2nd modal */
@@ -304,6 +347,10 @@ async function handleEventModal(interaction) {
     postAt,
     endAt: null,
   });
+
+  /* Normalize ping — convert role IDs to mention format */
+  session.ping = normalizePing(session.ping);
+
   sessions.set(sessionKey, session);
 
   /* Show the duration button → opens 2nd modal */
