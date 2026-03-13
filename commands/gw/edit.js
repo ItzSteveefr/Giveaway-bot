@@ -4,6 +4,8 @@
  * /gw edit — Edit a scheduled (queued) giveaway by ID.
  * Shows a select menu of editable fields; selecting one opens a modal
  * with the current value pre-filled.
+ *
+ * Editable fields: Prize, Winners, Post Timestamp, Link, Custom Channel Name.
  */
 
 const {
@@ -67,27 +69,39 @@ async function execute(interaction) {
   editSessions.set(sessionKey, { giveawayId: id });
 
   /* Build the field selection select menu */
+  const options = [
+    new StringSelectMenuOptionBuilder()
+      .setLabel('Prize')
+      .setDescription(`Current: ${giveaway.prize}`)
+      .setValue('prize'),
+    new StringSelectMenuOptionBuilder()
+      .setLabel('Number of Winners')
+      .setDescription(`Current: ${giveaway.winners}`)
+      .setValue('winners'),
+    new StringSelectMenuOptionBuilder()
+      .setLabel('Post Timestamp')
+      .setDescription(`Current: ${giveaway.postAt}`)
+      .setValue('postAt'),
+    new StringSelectMenuOptionBuilder()
+      .setLabel('Link')
+      .setDescription(`Current: ${giveaway.serverLink || 'N/A'}`)
+      .setValue('serverLink'),
+  ];
+
+  /* Only show the custom channel name option if it's a deferred custom channel giveaway */
+  if (giveaway.customChannelName) {
+    options.push(
+      new StringSelectMenuOptionBuilder()
+        .setLabel('Custom Channel Name')
+        .setDescription(`Current: ${giveaway.customChannelName}`)
+        .setValue('customChannelName')
+    );
+  }
+
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId('gw_edit_field_select')
     .setPlaceholder('Select field to edit')
-    .addOptions(
-      new StringSelectMenuOptionBuilder()
-        .setLabel('Prize')
-        .setDescription(`Current: ${giveaway.prize}`)
-        .setValue('prize'),
-      new StringSelectMenuOptionBuilder()
-        .setLabel('Number of Winners')
-        .setDescription(`Current: ${giveaway.winners}`)
-        .setValue('winners'),
-      new StringSelectMenuOptionBuilder()
-        .setLabel('Post Timestamp')
-        .setDescription(`Current: ${giveaway.postAt}`)
-        .setValue('postAt'),
-      new StringSelectMenuOptionBuilder()
-        .setLabel('Link')
-        .setDescription(`Current: ${giveaway.serverLink || 'N/A'}`)
-        .setValue('serverLink')
-    );
+    .addOptions(options);
 
   const row = new ActionRowBuilder().addComponents(selectMenu);
 

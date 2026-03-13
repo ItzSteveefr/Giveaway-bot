@@ -486,6 +486,7 @@ async function handleEditFieldSelect(interaction) {
     winners: { label: 'Number of Winners', current: String(giveaway.winners) },
     postAt: { label: 'Post Timestamp (Unix)', current: String(giveaway.postAt) },
     serverLink: { label: 'Link', current: giveaway.serverLink || '' },
+    customChannelName: { label: 'Custom Channel Name', current: giveaway.customChannelName || '' },
   };
 
   const info = fieldLabels[field];

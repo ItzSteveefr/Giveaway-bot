@@ -616,6 +616,14 @@ async function handleEditModal(interaction) {
     }
   } else if (field === 'serverLink') {
     updates.serverLink = newValue.trim() || null;
+  } else if (field === 'customChannelName') {
+    if (!newValue.trim()) {
+      return interaction.reply({
+        embeds: [buildErrorEmbed('Channel name cannot be empty.')],
+        ephemeral: true,
+      });
+    }
+    updates.customChannelName = newValue.trim();
   }
 
   /* Apply the update */

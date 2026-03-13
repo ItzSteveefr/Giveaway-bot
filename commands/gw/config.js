@@ -2,7 +2,7 @@
  * commands/gw/config.js
  * ---------------------
  * /gw config — Configure bot settings for this server.
- * Admin-only. Sets the manager role, mutual channel, and sponsor channel.
+ * Admin-only. Sets manager roles (multiple), mutual channel, and sponsor channel.
  */
 
 const { SlashCommandSubcommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
@@ -19,8 +19,11 @@ function buildSubcommand() {
   return new SlashCommandSubcommandBuilder()
     .setName('config')
     .setDescription('Configure bot settings for this server (admin only)')
-    .addRoleOption((opt) =>
-      opt.setName('manager_role').setDescription('The role that can run /gw commands').setRequired(false)
+    .addStringOption((opt) =>
+      opt
+        .setName('manager_roles')
+        .setDescription('Role IDs or @mentions separated by commas (e.g. @Role1, @Role2)')
+        .setRequired(false)
     )
     .addChannelOption((opt) =>
       opt
@@ -51,28 +54,48 @@ async function execute(interaction) {
     });
   }
 
-  const managerRole = interaction.options.getRole('manager_role');
+  const managerRolesRaw = interaction.options.getString('manager_roles');
   const mutualChannel = interaction.options.getChannel('mutual_channel');
   const sponsorChannel = interaction.options.getChannel('sponsor_channel');
 
   /* At least one option must be provided */
-  if (!managerRole && !mutualChannel && !sponsorChannel) {
+  if (!managerRolesRaw && !mutualChannel && !sponsorChannel) {
     return interaction.reply({
       embeds: [buildErrorEmbed('Please provide at least one option to configure.')],
       ephemeral: true,
     });
   }
 
+  /* Parse manager roles — extract role IDs from mentions or raw IDs */
+  let managerRoleIds = null;
+  if (managerRolesRaw) {
+    const roleIdPattern = /(\d{17,20})/g;
+    const matches = managerRolesRaw.match(roleIdPattern);
+
+    if (!matches || matches.length === 0) {
+      return interaction.reply({
+        embeds: [buildErrorEmbed('No valid role IDs found. Use @mentions or paste role IDs separated by commas.')],
+        ephemeral: true,
+      });
+    }
+
+    managerRoleIds = JSON.stringify(matches);
+  }
+
   /* Upsert the config */
   db.upsertGuildConfig(interaction.guildId, {
-    managerRoleId: managerRole?.id ?? null,
+    managerRoleId: managerRoleIds,
     mutualChannelId: mutualChannel?.id ?? null,
     sponsorChannelId: sponsorChannel?.id ?? null,
   });
 
   /* Build a confirmation embed listing what was updated */
   const fields = [];
-  if (managerRole) fields.push({ name: 'Manager Role', value: `<@&${managerRole.id}>`, inline: true });
+  if (managerRoleIds) {
+    const ids = JSON.parse(managerRoleIds);
+    const mentions = ids.map((id) => `<@&${id}>`).join(', ');
+    fields.push({ name: 'Manager Roles', value: mentions, inline: true });
+  }
   if (mutualChannel) fields.push({ name: 'Mutual Channel', value: `<#${mutualChannel.id}>`, inline: true });
   if (sponsorChannel) fields.push({ name: 'Sponsor Channel', value: `<#${sponsorChannel.id}>`, inline: true });
 
